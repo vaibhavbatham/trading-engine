@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Algorithmic Trading & Market Data Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0e14;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --green-up: #10b981;
+      --green-bg: rgba(16, 185, 129, 0.12);
+      --red-down: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.12);
+      --purple: #8b5cf6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    header {
+      background-color: #0f172a;
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .connection-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #1e293b;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f59e0b;
+    }
+
+    .status-dot.connected {
+      background-color: var(--green-up);
+      box-shadow: 0 0 8px var(--green-up);
+    }
+
+    .status-dot.disconnected {
+      background-color: var(--red-down);
+      box-shadow: 0 0 8px var(--red-down);
+    }
+
+    .status-dot.reconnecting {
+      background-color: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+      animation: dot-pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .badge-live {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-sim {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .badge-replay {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 1600px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .metric-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--accent-blue);
+    }
+
+    .metric-card.green::before { background: var(--green-up); }
+    .metric-card.purple::before { background: var(--purple); }
+    .metric-card.cyan::before { background: var(--accent-cyan); }
+
+    .metric-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .text-green { color: var(--green-up); }
+    .text-red { color: var(--red-down); }
+    .text-muted { color: var(--text-muted); }
+
+    /* Dashboard Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .left-col, .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Symbol Filter Pills */
+    .symbol-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .symbol-pill {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .symbol-pill.active {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .symbol-pill:hover:not(.active) {
+      background: #334155;
+      color: #fff;
+    }
+
+    /* Chart Box */
+    .chart-container {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.8rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      z-index: 1;
+    }
+
+    td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-buy {
+      background-color: var(--green-bg);
+      color: var(--green-up);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-sell {
+      background-color: var(--red-bg);
+      color: var(--red-down);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-why {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-why:hover {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    /* Chat Assistant */
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+    }
+
+    .chat-bubble {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      max-width: 90%;
+      word-wrap: break-word;
+    }
+
+    .chat-bubble.assistant {
+      background-color: #1e293b;
+      align-self: flex-start;
+      border-left: 3px solid var(--purple);
+    }
+
+    .chat-bubble.user {
+      background-color: #1d4ed8;
+      align-self: flex-end;
+      color: #fff;
+    }
+
+    .chat-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-prompt {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid #334155;
+      padding: 0.3rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-prompt:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .btn-send {
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-send:hover {
+      background: #2563eb;
+    }
+
+    /* Modal for AI Signal Explanation */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 580px;
+      padding: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-title">
+      <span>QUANTUM ENGINE</span>
+      <span class="brand-badge">PRODUCER-CONSUMER</span>
+    </div>
+    <div class="header-status">
+      <div id="market-data-pill" class="connection-pill" onclick="openMarketDataModal()" style="cursor: pointer;" title="Configure Real-Time Market Data / Twelve Data">
+        <div id="market-data-dot" class="status-dot"></div>
+        <span id="market-data-badge" class="badge badge-sim">SIMULATION</span>
+        <span id="market-data-text" class="mono" style="font-size:0.75rem; color:var(--text-muted);">CONNECTING</span>
+      </div>
+      <div id="bot-status-pill" class="connection-pill" onclick="openBotInfoModal()" style="cursor: pointer;" title="ChartBot Intelligence & Guide (Built-In, No API Key Required)">
+        <div id="bot-status-dot" class="status-dot connected"></div>
+        <span id="bot-status-text" class="mono" style="color: var(--accent-cyan);">CHART BOT</span>
+      </div>
+      <div class="connection-pill">
+        <div id="connection-dot" class="status-dot"></div>
+        <span id="connection-text" class="mono">CONNECTING...</span>
+      </div>
+      <div class="mono text-muted" id="clock-display">00:00:00 UTC</div>
+    </div>
+  </header>
+
+  <div class="dashboard-container">
+    <!-- Top KPI Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card cyan">
+        <div class="metric-title">Total Equity</div>
+        <div class="metric-value mono" id="metric-equity">$100,000.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Cash Balance</div>
+        <div class="metric-value mono" id="metric-cash">$100,000.00</div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-title">Unrealized P&L</div>
+        <div class="metric-value mono text-green" id="metric-unrealized">$0.00</div>
+      </div>
+      <div class="metric-card purple">
+        <div class="metric-title">Realized P&L</div>
+        <div class="metric-value mono text-green" id="metric-realized">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column: Chart & Positions -->
+      <div class="left-col">
+        <!-- Live Market Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>Live Tick Telemetry</span>
+              <span class="mono text-muted" id="selected-symbol-price">--</span>
+              <span class="mono text-muted" id="selected-symbol-vol" style="font-size:0.75rem;"></span>
+            </div>
+            <div class="symbol-pills" id="symbol-selectors">
+              <!-- Dynamically populated pills -->
+            </div>
+          </div>
+          <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-muted); background: rgba(15, 23, 42, 0.6); padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid var(--card-border);">
+            <div>Provider: <span id="telemetry-provider" class="mono text-main" style="font-weight:600;">--</span></div>
+            <div>Mode: <span id="telemetry-mode" class="mono text-main" style="font-weight:600;">--</span></div>
+            <div>Queue: <span id="telemetry-queue" class="mono text-main">0/10000</span></div>
+            <div>Processed: <span id="telemetry-processed" class="mono text-green">0</span></div>
+            <div>Dropped: <span id="telemetry-dropped" class="mono text-main">0</span></div>
+          </div>
+          <div class="chart-container">
+            <canvas id="marketChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Open Positions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Active Portfolio Positions</div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>SYMBOL</th>
+                  <th>QTY</th>
+                  <th>AVG ENTRY</th>
+                  <th>CURRENT PRICE</th>
+                  <th>MARKET VALUE</th>
+                  <th>UNREALIZED P&L</th>
+                </tr>
+              </thead>
+              <tbody id="positions-table-body">
+                <tr><td colspan="6" class="text-muted" style="text-align:center;">No open positions held.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Order Execution History -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Order Executions</div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>TIME</th>
+                  <th>SYMBOL</th>
+                  <th>SIDE</th>
+                  <th>QTY</th>
+                  <th>EXEC PRICE</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="6" class="text-muted" style="text-align:center;">No trade executions yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Signals & AI Chat -->
+      <div class="right-col">
+        <!-- Live Signals -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Generated Signals</div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>TIME</th>
+                  <th>SYMBOL</th>
+                  <th>SIGNAL</th>
+                  <th>PRICE</th>
+                  <th>STRATEGY</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="signals-table-body">
+                <tr><td colspan="6" class="text-muted" style="text-align:center;">Awaiting strategy signals...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ChartBot Trading Assistant -->
+        <div class="card chat-box">
+          <div class="card-header">
+            <div class="card-title">
+              <span>ChartBot Trading Assistant</span>
+              <span class="mono" style="font-size: 0.7rem; color: var(--green-up); background: var(--green-bg); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight:600;">BUILT-IN</span>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-bubble assistant">
+              👋 Hello! I am <strong>ChartBot</strong>, your built-in algorithmic trading and chart analysis assistant. Ask me about live stock charts, price trends, technical indicators (RSI, MA Crossover, Bollinger Bands), open positions, or click "Why?" next to any signal!
+            </div>
+          </div>
+
+          <div class="chat-suggestions">
+            <button class="btn-prompt" onclick="sendQuickPrompt('What is the price and trend of AAPL?')">AAPL Price &amp; Trend</button>
+            <button class="btn-prompt" onclick="sendQuickPrompt('What is my total portfolio equity and cash balance?')">Equity &amp; Cash</button>
+            <button class="btn-prompt" onclick="sendQuickPrompt('Explain the RSI and Bollinger Bands strategies')">Indicators Guide</button>
+            <button class="btn-prompt" onclick="sendQuickPrompt('Show me my current open positions and P&L')">Open Positions</button>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Ask ChartBot about charts, prices, portfolio, or indicators..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+            <button class="btn-send" onclick="sendChatMessage()">Ask Bot</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for AI Signal Explanations -->
+  <div id="explain-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title" style="font-size: 1rem; font-weight: 700;">Signal Rationale</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modal-body" style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1;">
+        Loading explanation from ChartBot...
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Configuring Real-Time Market Data (Twelve Data / Simulation) -->
+  <div id="market-data-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1rem; font-weight: 700;">Real-Time Market Data Configuration</h3>
+        <button class="btn-close" onclick="closeMarketDataModal()">&times;</button>
+      </div>
+      <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.85rem;">
+        <div>
+          <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #f8fafc;">Market Data Ingestion Mode:</label>
+          <div style="display: flex; gap: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="md-mode" value="live" id="md-mode-live" onchange="toggleMarketDataInputs()" />
+              <span style="font-weight: 600; color: #10b981;">LIVE — Twelve Data WebSocket</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="md-mode" value="simulation" id="md-mode-sim" onchange="toggleMarketDataInputs()" checked />
+              <span style="font-weight: 600; color: #f59e0b;">SIMULATION (Brownian Motion)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="twelve-data-key-group">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #f8fafc;">
+            Twelve Data API Key:
+            <a href="https://twelvedata.com" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-size: 0.75rem; font-weight: 400; text-decoration: underline; margin-left: 0.5rem;">Get free key at twelvedata.com &rarr;</a>
+          </label>
+          <input type="password" id="twelve-data-key-input" class="chat-input" placeholder="Enter your Twelve Data API key..." style="width: 100%;" />
+        </div>
+
+        <div>
+          <label style="display: block; font-weight: 600; margin-bottom: 0.35rem; color: #f8fafc;">Tracked Company Symbols (Comma-separated):</label>
+          <input type="text" id="market-data-symbols-input" class="chat-input" placeholder="AAPL, MSFT, GOOGL, AMZN, TSLA, NVDA, META" style="width: 100%;" />
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">
+            Supported: US Equities (AAPL, NVDA, TSLA, MSFT, etc.). Orders and executions remain 100% simulated.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="btn-prompt" onclick="closeMarketDataModal()">Cancel</button>
+          <button class="btn-send" onclick="saveMarketDataConfig()">Apply & Connect</button>
+        </div>
+        <div id="market-data-status-msg" style="font-size: 0.8rem; margin-top: 0.25rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for ChartBot Info & Guide -->
+  <div id="bot-info-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🤖 ChartBot Assistant Guide</span>
+          <span style="font-size: 0.7rem; background: var(--green-bg); color: var(--green-up); padding: 0.15rem 0.4rem; border-radius: 4px;">BUILT-IN</span>
+        </h3>
+        <button class="btn-close" onclick="closeBotInfoModal()">&times;</button>
+      </div>
+      <div style="font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.85rem;">
+        <p><strong>ChartBot</strong> is your built-in algorithmic and chart analytics assistant. It runs 100% locally with zero latency, no quota limits, and zero external API dependencies.</p>
+        
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <div style="font-weight: 600; color: #38bdf8;">What can you ask ChartBot?</div>
+          <div>• <strong>Price &amp; Trend</strong>: <em>"What is the price of AAPL?"</em>, <em>"NVDA trend"</em>, <em>"TSLA support &amp; resistance"</em></div>
+          <div>• <strong>Technical Indicators</strong>: <em>"Explain RSI"</em>, <em>"What is Moving Average Crossover?"</em>, <em>"How do Bollinger Bands work?"</em></div>
+          <div>• <strong>Portfolio Status</strong>: <em>"What is my equity?"</em>, <em>"Show open positions"</em>, <em>"What is my P&amp;L?"</em></div>
+          <div>• <strong>Trade History</strong>: <em>"Recent orders"</em>, <em>"Show filled trades"</em></div>
+          <div>• <strong>Market Data</strong>: <em>"How do I switch to live Twelve Data quotes?"</em></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+          <button class="btn-send" onclick="closeBotInfoModal()">Got It</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
