@@ -1,6 +1,8 @@
 # Algorithmic Trading & Market Data Platform (`trading-engine`)
 
-A high-performance, real-time algorithmic trading and market data simulation platform built with **Python 3.11+**, **FastAPI**, multi-threaded **Producer-Consumer** architecture (`queue.Queue`), **SQLAlchemy** (PostgreSQL / SQLite), live **WebSockets** with **Chart.js**, and a **Google Gemini AI** trading assistant.
+A high-performance, real-time algorithmic trading and market data simulation platform built with **Python 3.11+**, **FastAPI**, multi-threaded **Producer-Consumer** architecture (`queue.Queue`), **SQLAlchemy** (PostgreSQL / SQLite), live **WebSockets** with **Chart.js**, and a built-in **ChartBot** assistant.
+
+🌐 **Live Interactive Demo on GitHub Pages**: **[https://vaibhavbatham.github.io/trading-engine/](https://vaibhavbatham.github.io/trading-engine/)**
 
 ---
 
