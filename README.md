@@ -265,10 +265,10 @@ pytest tests/ -v
 | `GET` | `/api/trades` | List of recent order executions |
 | `GET` | `/api/signals` | List of recent trading signals |
 | `GET` | `/api/strategies` | List of active strategy configurations |
-| `GET` | `/api/assistant/status` | Current AI assistant connection status and active model |
-| `POST` | `/api/assistant/set-key` | Dynamically update and test Google Gemini API key |
-| `POST` | `/api/assistant/ask` | Send a question to Gemini AI assistant |
-| `GET` | `/api/assistant/explain/{id}` | Request grounded Gemini explanation for a signal |
+| `GET` | `/api/assistant/status` | Current ChartBot assistant status and version |
+| `POST` | `/api/assistant/set-key` | ChartBot status check (no API keys required) |
+| `POST` | `/api/assistant/ask` | Send a question to ChartBot |
+| `GET` | `/api/assistant/explain/{id}` | Request grounded mathematical indicator explanation for a signal |
 | `WS` | `/ws` | Real-time WebSocket connection streaming ticks, signals, equity, and feed telemetry |
 
 ---
@@ -281,8 +281,7 @@ pytest tests/ -v
 2. Render will automatically detect `render.yaml` and provision:
    - A managed PostgreSQL instance (`trading-engine-db`).
    - A web service running `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-3. Set your `GEMINI_API_KEY` in the Render Environment Variables tab.
-4. Render monitors the `/health` endpoint for zero-downtime deployments.
+3. Render monitors the `/health` endpoint for zero-downtime deployments.
 
 ### Deploy to Railway
 
@@ -292,4 +291,4 @@ pytest tests/ -v
    ```Procfile
    web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
    ```
-4. Configure `DATABASE_URL` (automatically linked from Railway PostgreSQL) and `GEMINI_API_KEY`.
+4. Configure `DATABASE_URL` (automatically linked from Railway PostgreSQL).
